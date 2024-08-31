@@ -6,5 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class AccountResponseDto {
-	private String message;
+    private String message;
+    private String token;
+    private UserDto user;
 }

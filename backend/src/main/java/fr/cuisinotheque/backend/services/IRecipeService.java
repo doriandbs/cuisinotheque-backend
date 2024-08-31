@@ -10,4 +10,6 @@ public interface IRecipeService {
     RecipeDTO createRecipe(RecipeDTO recipeDTO);
     RecipeDTO updateRecipe(Long id, RecipeDTO updatedRecipeDTO);
     void deleteRecipe(Long id);
+
+    List<RecipeDTO> getRecipesByCurrentUser();
 }

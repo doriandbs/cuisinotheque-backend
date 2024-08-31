@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Entity
 @Data
 @Table(name="ingredients")
@@ -21,6 +19,4 @@ public class IngredientEntity {
 
     private String ingredient;
 
-    @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RecipeIngredientEntity> recipeIngredients;
 }

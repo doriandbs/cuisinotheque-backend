@@ -22,8 +22,17 @@ public class RecipeEntity {
 
     private String title;
 
-    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RecipeIngredientEntity> recipeIngredients;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
+
+    @ManyToMany
+    @JoinTable(
+            name = "recipe_ingredients",
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "ingredient_id")
+    )
+    private List<IngredientEntity> ingredients;
 
     @ManyToMany
     @JoinTable(

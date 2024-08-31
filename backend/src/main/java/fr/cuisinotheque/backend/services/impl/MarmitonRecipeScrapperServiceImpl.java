@@ -4,11 +4,11 @@ import fr.cuisinotheque.backend.dtos.IngredientDTO;
 import fr.cuisinotheque.backend.dtos.InstructionDTO;
 import fr.cuisinotheque.backend.dtos.RecipeDTO;
 import fr.cuisinotheque.backend.services.IMarmitonRecipeScrapperService;
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
-import org.jsoup.Jsoup;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,8 +40,11 @@ public class MarmitonRecipeScrapperServiceImpl implements IMarmitonRecipeScrappe
             ingredientDTO.setIngredient(ingredientName);
             ingredientDTO.setQuantity(quantity);
             if (!unit.isEmpty()) {
-                ingredientDTO.setIngredient(ingredientDTO.getIngredient() + " (" + unit + ")");
+                ingredientDTO.setIngredient(quantityText + " " + unit + " de " + ingredientDTO.getIngredient());
+            } else {
+                ingredientDTO.setIngredient(quantityText + " " + ingredientDTO.getIngredient());
             }
+
             if (!complement.isEmpty()) {
                 ingredientDTO.setIngredient(ingredientDTO.getIngredient() + " " + complement);
             }

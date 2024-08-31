@@ -1,18 +1,25 @@
 package fr.cuisinotheque.backend.services.impl;
 
+import fr.cuisinotheque.backend.dtos.IngredientDTO;
+import fr.cuisinotheque.backend.dtos.InstructionDTO;
 import fr.cuisinotheque.backend.dtos.RecipeDTO;
 import fr.cuisinotheque.backend.mapper.GlobalMapper;
 import fr.cuisinotheque.backend.services.IRecipeService;
+import fr.cuisinotheque.data.entities.IngredientEntity;
 import fr.cuisinotheque.data.entities.InstructionEntity;
 import fr.cuisinotheque.data.entities.RecipeEntity;
-import fr.cuisinotheque.data.entities.RecipeIngredientEntity;
+import fr.cuisinotheque.data.entities.UserEntity;
 import fr.cuisinotheque.data.repositories.IIngredientRepository;
 import fr.cuisinotheque.data.repositories.IInstructionRepository;
 import fr.cuisinotheque.data.repositories.IRecipeRepository;
+import fr.cuisinotheque.data.repositories.IUserJpaRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,13 +29,29 @@ import java.util.stream.Collectors;
 public class RecipeServiceImpl implements IRecipeService {
     private final IRecipeRepository recipeRepository;
     private final IInstructionRepository instructionRepository;
-
+    private final IUserJpaRepository userJpaRepository;
     private final IIngredientRepository ingredientRepository;
 
     private final GlobalMapper recipeMapper;
 
+
     public List<RecipeDTO> getAllRecipes() {
         return recipeMapper.toDtoList(recipeRepository.findAll());
+    }
+
+    public List<RecipeDTO> getRecipesByCurrentUser() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            UserEntity userEntity = userJpaRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            UserEntity user = userJpaRepository.findByEmail(userEntity.getEmail())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            return recipeMapper.toDtoList(recipeRepository.findByUser(user));
+        }
+        return null;
     }
 
     public RecipeDTO getRecipeById(Long id) {
@@ -36,33 +59,71 @@ public class RecipeServiceImpl implements IRecipeService {
         return recipeEntity.map(recipeMapper::mapRecipeEntityToRecipe).orElse(null);
     }
 
+
     public RecipeDTO createRecipe(RecipeDTO recipeDTO) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         RecipeEntity recipeEntity = recipeMapper.mapRecipeToRecipeEntity(recipeDTO);
-        RecipeEntity savedEntity = recipeRepository.save(recipeEntity);
-        return recipeMapper.mapRecipeEntityToRecipe(savedEntity);
+
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            UserEntity userEntity = userJpaRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            recipeEntity.setUser(userEntity);
+        }
+        List<InstructionEntity> instructions = new ArrayList<>();
+        for (InstructionDTO instructionDTO : recipeDTO.getInstructions()) {
+            InstructionEntity instructionEntity = new InstructionEntity();
+            if (instructionEntity.getId() != null) {
+                instructionEntity = instructionRepository.findById(instructionDTO.getId())
+                        .orElse(null);
+            } else {
+                instructionEntity.setInstruction(instructionDTO.getInstruction());
+                instructionEntity = instructionRepository.save(instructionEntity);
+            }
+
+            instructions.add(instructionEntity);
+        }
+
+        List<IngredientEntity> ingredients = new ArrayList<>();
+        for (IngredientDTO ingredientDTO : recipeDTO.getIngredients()) {
+            IngredientEntity ingredientEntity = new IngredientEntity();
+            if (ingredientEntity.getId() != null) {
+                ingredientEntity = ingredientRepository.findById(ingredientDTO.getId())
+                        .orElse(null);
+            } else {
+                ingredientEntity.setIngredient(ingredientDTO.getIngredient());
+                ingredientEntity = ingredientRepository.save(ingredientEntity);
+            }
+
+            ingredients.add(ingredientEntity);
+        }
+
+        recipeEntity.setInstructions(instructions);
+        recipeEntity.setIngredients(ingredients);
+        RecipeEntity savedRecipeEntity = recipeRepository.save(recipeEntity);
+
+
+        return recipeMapper.mapRecipeEntityToRecipe(savedRecipeEntity);
     }
 
     public RecipeDTO updateRecipe(Long id, RecipeDTO updatedRecipeDTO) {
         return recipeRepository.findById(id).map(recipeEntity -> {
             recipeEntity.setTitle(updatedRecipeDTO.getTitle());
 
-            List<RecipeIngredientEntity> updatedRecipeIngredients = updatedRecipeDTO.getIngredients().stream()
-                    .map(ingredientDTO -> {
-                        RecipeIngredientEntity recipeIngredientEntity = new RecipeIngredientEntity();
-                        recipeIngredientEntity.setRecipe(recipeEntity);
-                        recipeIngredientEntity.setIngredient(ingredientRepository.findById(ingredientDTO.getId())
-                                .orElseThrow(() -> new RuntimeException("Ingredient not found")));
-                        recipeIngredientEntity.setQuantity(ingredientDTO.getQuantity());
-                        return recipeIngredientEntity;
-                    }).collect(Collectors.toList());
+            List<IngredientEntity> updatedIngredients = updatedRecipeDTO.getIngredients().stream()
+                    .map(ingredientDTO -> ingredientRepository.findById(ingredientDTO.getId())
+                            .orElseThrow(() -> new RuntimeException("Ingredient not found")))
+                    .toList();
 
-            recipeEntity.getRecipeIngredients().clear();
-            recipeEntity.getRecipeIngredients().addAll(updatedRecipeIngredients);
+            recipeEntity.getIngredients().clear();
+            recipeEntity.getIngredients().addAll(updatedIngredients);
 
             List<InstructionEntity> updatedInstructions = updatedRecipeDTO.getInstructions().stream()
                     .map(instructionDTO -> instructionRepository.findById(instructionDTO.getId())
                             .orElseThrow(() -> new RuntimeException("Instruction not found")))
-                    .collect(Collectors.toList());
+                    .toList();
 
             recipeEntity.getInstructions().clear();
             recipeEntity.getInstructions().addAll(updatedInstructions);
@@ -73,17 +134,13 @@ public class RecipeServiceImpl implements IRecipeService {
             RecipeEntity newEntity = recipeMapper.mapRecipeToRecipeEntity(updatedRecipeDTO);
             newEntity.setId(id);
 
-            List<RecipeIngredientEntity> newRecipeIngredients = updatedRecipeDTO.getIngredients().stream()
-                    .map(ingredientDTO -> {
-                        RecipeIngredientEntity recipeIngredientEntity = new RecipeIngredientEntity();
-                        recipeIngredientEntity.setRecipe(newEntity);
-                        recipeIngredientEntity.setIngredient(ingredientRepository.findById(ingredientDTO.getId())
-                                .orElseThrow(() -> new RuntimeException("Ingredient not found")));
-                        recipeIngredientEntity.setQuantity(ingredientDTO.getQuantity());
-                        return recipeIngredientEntity;
-                    }).collect(Collectors.toList());
+            List<IngredientEntity> newIngredients = updatedRecipeDTO.getIngredients().stream()
+                    .map(ingredientDTO -> ingredientRepository.findById(ingredientDTO.getId())
+                            .orElseThrow(() -> new RuntimeException("Instruction not found")))
+                    .toList();
 
-            newEntity.setRecipeIngredients(newRecipeIngredients);
+            newEntity.setIngredients(newIngredients);
+
 
             List<InstructionEntity> newInstructions = updatedRecipeDTO.getInstructions().stream()
                     .map(instructionDTO -> instructionRepository.findById(instructionDTO.getId())
