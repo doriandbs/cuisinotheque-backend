@@ -7,7 +7,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <artifactId>backend</artifactId>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
     <name>backend Maven Webapp</name>
 
 
