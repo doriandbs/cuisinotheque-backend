@@ -1,21 +1,11 @@
 
 package fr.cuisinotheque.backend;
 
-import fr.cuisinotheque.backend.dtos.UserDto;
-import fr.cuisinotheque.backend.services.IAccountService;
-import fr.cuisinotheque.data.entities.RoleEntity;
 
-import fr.cuisinotheque.data.enums.RoleName;
-import fr.cuisinotheque.data.repositories.IRoleJpaRepository;
-import fr.cuisinotheque.data.repositories.IUserJpaRepository;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-
-import java.util.ArrayList;
 
 @SpringBootApplication
 @EnableJpaRepositories("fr.cuisinotheque.data.repositories")
