@@ -41,4 +41,7 @@ public class RecipeEntity {
             inverseJoinColumns = @JoinColumn(name = "instruction_id")
     )
     private List<InstructionEntity> instructions;
+
+    @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL)
+    private List<RecipeImageEntity> images;
 }

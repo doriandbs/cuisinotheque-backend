@@ -1,18 +1,13 @@
 package fr.cuisinotheque.backend.services.impl;
 
+import fr.cuisinotheque.backend.dtos.ImageRecipeDTO;
 import fr.cuisinotheque.backend.dtos.IngredientDTO;
 import fr.cuisinotheque.backend.dtos.InstructionDTO;
 import fr.cuisinotheque.backend.dtos.RecipeDTO;
 import fr.cuisinotheque.backend.mapper.GlobalMapper;
 import fr.cuisinotheque.backend.services.IRecipeService;
-import fr.cuisinotheque.data.entities.IngredientEntity;
-import fr.cuisinotheque.data.entities.InstructionEntity;
-import fr.cuisinotheque.data.entities.RecipeEntity;
-import fr.cuisinotheque.data.entities.UserEntity;
-import fr.cuisinotheque.data.repositories.IIngredientRepository;
-import fr.cuisinotheque.data.repositories.IInstructionRepository;
-import fr.cuisinotheque.data.repositories.IRecipeRepository;
-import fr.cuisinotheque.data.repositories.IUserJpaRepository;
+import fr.cuisinotheque.data.entities.*;
+import fr.cuisinotheque.data.repositories.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,7 +26,7 @@ public class RecipeServiceImpl implements IRecipeService {
     private final IInstructionRepository instructionRepository;
     private final IUserJpaRepository userJpaRepository;
     private final IIngredientRepository ingredientRepository;
-
+    private final IRecipeImageRepository recipeImageRepository;
     private final GlobalMapper recipeMapper;
 
 
@@ -99,13 +94,24 @@ public class RecipeServiceImpl implements IRecipeService {
 
             ingredients.add(ingredientEntity);
         }
-
         recipeEntity.setInstructions(instructions);
         recipeEntity.setIngredients(ingredients);
         RecipeEntity savedRecipeEntity = recipeRepository.save(recipeEntity);
+        List<RecipeImageEntity> imageEntities = new ArrayList<>();
+        if (recipeDTO.getImages() != null) {
+            for (ImageRecipeDTO imageDTO : recipeDTO.getImages()) {
+                RecipeImageEntity imageEntity = new RecipeImageEntity();
+                imageEntity.setImageData(imageDTO.getImageData());
+                imageEntity.setRecipe(savedRecipeEntity);
+                RecipeImageEntity savedImageEntity = recipeImageRepository.save(imageEntity);
+                imageEntities.add(savedImageEntity);
+            }
 
+        }
+        savedRecipeEntity.setImages(imageEntities);
+        RecipeEntity savedRecipeEntityImage = recipeRepository.save(recipeEntity);
 
-        return recipeMapper.mapRecipeEntityToRecipe(savedRecipeEntity);
+        return recipeMapper.mapRecipeEntityToRecipe(savedRecipeEntityImage);
     }
 
     public RecipeDTO updateRecipe(Long id, RecipeDTO updatedRecipeDTO) {

@@ -6,7 +6,10 @@ import fr.cuisinotheque.backend.dtos.LoginRequestDto;
 import fr.cuisinotheque.backend.dtos.RegisterRequestDto;
 import fr.cuisinotheque.backend.mapper.GlobalMapper;
 import fr.cuisinotheque.backend.security.CustomPasswordEncoder;
+import fr.cuisinotheque.data.entities.RoleEntity;
 import fr.cuisinotheque.data.entities.UserEntity;
+import fr.cuisinotheque.data.enums.RoleName;
+import fr.cuisinotheque.data.repositories.IRoleJpaRepository;
 import fr.cuisinotheque.data.repositories.IUserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -19,6 +22,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
@@ -27,6 +32,7 @@ public class AuthenticationService {
     private final CustomPasswordEncoder passwordEncoder;
 
     private final AuthenticationManager authenticationManager;
+    private final IRoleJpaRepository roleJpaRepository;
 
     private final JwtService jwtService;
     private final GlobalMapper globalMapper;
@@ -45,6 +51,9 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(user.getPassword()))
                 .lastName(user.getLastname())
                 .build();
+        RoleEntity role = roleJpaRepository.findByRoleName(RoleName.USER);
+        newUser.setRoles(new ArrayList<>());
+        newUser.getRoles().add(role);
         userJpaRepository.save(newUser);
         return ResponseEntity.ok(AccountResponseDto.builder().message("Utilisateur bien enregistré")
                 .build());

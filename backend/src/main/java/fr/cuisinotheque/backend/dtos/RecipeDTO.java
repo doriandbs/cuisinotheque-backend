@@ -11,4 +11,5 @@ public class RecipeDTO {
     private String title;
     private List<IngredientDTO> ingredients;
     private List<InstructionDTO> instructions;
+    private List<ImageRecipeDTO> images;
 }

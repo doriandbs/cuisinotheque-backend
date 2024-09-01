@@ -1,5 +1,6 @@
 package fr.cuisinotheque.backend.services.impl;
 
+import fr.cuisinotheque.backend.dtos.ImageRecipeDTO;
 import fr.cuisinotheque.backend.dtos.IngredientDTO;
 import fr.cuisinotheque.backend.dtos.InstructionDTO;
 import fr.cuisinotheque.backend.dtos.RecipeDTO;
@@ -10,7 +11,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +48,6 @@ public class CuisineActuelleRecipeScrapperServiceImpl implements ICuisineActuell
             ingredients.add(ingredientDTO);
         }
 
-        // Extraire les instructions
         Elements instructionElements = doc.select("div.recipe-instructionContent ol li");
         List<InstructionDTO> instructions = new ArrayList<>();
 
@@ -56,13 +59,37 @@ public class CuisineActuelleRecipeScrapperServiceImpl implements ICuisineActuell
             instructions.add(instructionDTO);
         }
 
-        // Construire l'objet RecipeDTO
+
+        Elements imageElements = doc.select("div.thumbVideoImage img.lazyload");
+        List<ImageRecipeDTO> images = new ArrayList<>();
+
+        for (Element img : imageElements) {
+            String imgUrl = img.attr("data-src");
+            if (!imgUrl.isEmpty()) {
+                byte[] imageData = downloadImage(imgUrl);
+                ImageRecipeDTO imageRecipeDTO = new ImageRecipeDTO();
+                imageRecipeDTO.setImageData(imageData);
+                images.add(imageRecipeDTO);
+            }
+        }
+
         RecipeDTO recipeDTO = new RecipeDTO();
         recipeDTO.setTitle(title);
         recipeDTO.setIngredients(ingredients);
         recipeDTO.setInstructions(instructions);
-
+        recipeDTO.setImages(images);
         return recipeDTO;
     }
 
+    private byte[] downloadImage(String imageUrl) throws IOException {
+        try (InputStream in = new URL(imageUrl).openStream();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int n;
+            while ((n = in.read(buffer)) != -1) {
+                out.write(buffer, 0, n);
+            }
+            return out.toByteArray();
+        }
+    }
 }
