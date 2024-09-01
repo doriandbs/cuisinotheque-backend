@@ -2,10 +2,7 @@ package fr.cuisinotheque.backend.controllers;
 
 import fr.cuisinotheque.backend.dtos.RecipeDTO;
 import fr.cuisinotheque.backend.mapper.RecipeParser;
-import fr.cuisinotheque.backend.services.ICuisineAZRecipeScrapperService;
-import fr.cuisinotheque.backend.services.IMarmitonRecipeScrapperService;
-import fr.cuisinotheque.backend.services.IRecipeService;
-import fr.cuisinotheque.backend.services.IRicardoRecipeScrapperService;
+import fr.cuisinotheque.backend.services.*;
 import lombok.RequiredArgsConstructor;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +31,8 @@ public class RecipeController {
 
     private final ICuisineAZRecipeScrapperService cuisineAZRecipeScrapperService;
 
+    private final IHerveRecipeScrapperService herveRecipeScrapperService;
+    private final ICuisineActuelleRecipeScrapperService cuisineActuelleRecipeScrapperService;
     @Autowired
     private IRicardoRecipeScrapperService ricardoRecipeScrapperService;
 
@@ -75,6 +74,11 @@ public class RecipeController {
             return cuisineAZRecipeScrapperService.cuisineAzScrapeRecipeFromUrl(url);
         } else if (url.contains("ricardocuisine")) {
             return ricardoRecipeScrapperService.ricardoScrapeRecipeFromUrl(url);
+        } else if (url.contains("hervecuisine")) {
+            return herveRecipeScrapperService.herveScrapeRecipeFromUrl(url);
+
+        } else if (url.contains("cuisineactuelle")) {
+            return cuisineActuelleRecipeScrapperService.cuisineActuelleScrapeRecipeFromUrl(url);
         } else {
             throw new IllegalArgumentException("URL non prise en charge pour le scraping");
         }
