@@ -33,6 +33,7 @@ public class RecipeController {
 
     private final IHerveRecipeScrapperService herveRecipeScrapperService;
     private final ICuisineActuelleRecipeScrapperService cuisineActuelleRecipeScrapperService;
+    private final IPatissiersRecipeScrapperService patissiersRecipeScrapperService;
     @Autowired
     private IRicardoRecipeScrapperService ricardoRecipeScrapperService;
 
@@ -77,6 +78,8 @@ public class RecipeController {
         } else if (url.contains("hervecuisine")) {
             return herveRecipeScrapperService.herveScrapeRecipeFromUrl(url);
 
+        } else if (url.contains("2patissiers")) {
+            return patissiersRecipeScrapperService.patissiersScrapeRecipeFromUrl(url);
         } else if (url.contains("cuisineactuelle")) {
             return cuisineActuelleRecipeScrapperService.cuisineActuelleScrapeRecipeFromUrl(url);
         } else {
